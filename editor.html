@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>坦克大战 - 地图编辑器</title>
+    <style>
+        /* ============================================
+           地图编辑器样式
+           Map Editor Styles
+           ============================================ */
+        
+        /* 全局重置 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        /* 页面主体 */
+        body {
+            font-family: 'Press Start 2P', 'Courier New', monospace;
+            background: #1a1a2e;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            color: #f0f0f0;
+        }
+        
+        /* 页面标题 */
+        h1 {
+            color: #f8d830;
+            font-size: 24px;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 0 #000;
+        }
+        
+        /* 主容器 */
+        .editor-container {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        /* 工具面板 */
+        .tool-panel {
+            background: #000;
+            border: 4px solid #404040;
+            padding: 15px;
+            min-width: 200px;
+        }
+        
+        /* 面板标题 */
+        .panel-title {
+            color: #f8d830;
+            font-size: 14px;
+            text-align: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #404040;
+        }
+        
+        /* 工具组 */
+        .tool-group {
+            margin-bottom: 15px;
+        }
+        
+        .tool-group-title {
+            color: #808080;
+            font-size: 10px;
+            margin-bottom: 8px;
+        }
+        
+        /* 地形选择按钮 */
+        .tile-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+        
+        .tile-btn {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 10px;
+            padding: 10px 8px;
+            border: 2px solid #404040;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        
+        .tile-btn:hover {
+            border-color: #f8d830;
+        }
+        
+        .tile-btn.active {
+            border-color: #f8d830;
+            box-shadow: 0 0 10px #f8d830;
+        }
+        
+        /* 地形颜色 */
+        .tile-btn.empty { background: #000; color: #808080; }
+        .tile-btn.brick { background: #a04020; color: #f0f0f0; }
+        .tile-btn.steel { background: #808080; color: #f0f0f0; }
+        .tile-btn.water { background: #2040a0; color: #f0f0f0; }
+        .tile-btn.grass { background: #206020; color: #f0f0f0; }
+        .tile-btn.base { background: #a0a0a0; color: #000; }
+        
+        /* 画笔大小 */
+        .brush-size {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+        }
+        
+        .brush-btn {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 10px;
+            padding: 8px 12px;
+            background: #202020;
+            border: 2px solid #404040;
+            color: #f0f0f0;
+            cursor: pointer;
+        }
+        
+        .brush-btn:hover {
+            border-color: #f8d830;
+        }
+        
+        .brush-btn.active {
+            border-color: #f8d830;
+            background: #404040;
+        }
+        
+        /* 操作按钮 */
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .action-btn {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 10px;
+            padding: 12px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .action-btn.save {
+            background: #40a040;
+            color: #f0f0f0;
+        }
+        
+        .action-btn.load {
+            background: #4060a0;
+            color: #f0f0f0;
+        }
+        
+        .action-btn.clear {
+            background: #a04040;
+            color: #f0f0f0;
+        }
+        
+        .action-btn.test {
+            background: #a0a040;
+            color: #000;
+        }
+        
+        .action-btn.back {
+            background: #6060a0;
+            color: #f0f0f0;
+        }
+        
+        .action-btn:hover {
+            opacity: 0.8;
+        }
+        
+        /* 地图信息输入 */
+        .map-info {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .map-info input {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 10px;
+            padding: 8px;
+            background: #202020;
+            border: 2px solid #404040;
+            color: #f0f0f0;
+        }
+        
+        .map-info input:focus {
+            outline: none;
+            border-color: #f8d830;
+        }
+        
+        /* 画布容器 */
+        .canvas-container {
+            background: #000;
+            border: 4px solid #404040;
+            padding: 10px;
+        }
+        
+        #mapCanvas {
+            display: block;
+            cursor: crosshair;
+        }
+        
+        /* 右侧面板 */
+        .right-panel {
+            background: #000;
+            border: 4px solid #404040;
+            padding: 15px;
+            min-width: 200px;
+        }
+        
+        /* 预览列表 */
+        .preview-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .preview-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            margin-bottom: 5px;
+            background: #202020;
+            border: 1px solid #404040;
+            cursor: pointer;
+        }
+        
+        .preview-item:hover {
+            border-color: #f8d830;
+        }
+        
+        .preview-item-name {
+            font-size: 10px;
+            color: #f0f0f0;
+        }
+        
+        .preview-item-delete {
+            font-size: 10px;
+            color: #a04040;
+            cursor: pointer;
+        }
+        
+        /* 帮助信息 */
+        .help-info {
+            font-size: 8px;
+            color: #808080;
+            line-height: 1.6;
+        }
+        
+        .help-info p {
+            margin-bottom: 5px;
+        }
+        
+        /* 隐藏的文件输入 */
+        #fileInput {
+            display: none;
+        }
+        
+        /* 提示消息 */
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #40a040;
+            color: #f0f0f0;
+            padding: 10px 20px;
+            border: 2px solid #60c060;
+            font-size: 12px;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .toast.show {
+            opacity: 1;
+        }
+        
+        .toast.error {
+            background: #a04040;
+            border-color: #c06060;
+        }
+        
+        /* 模式选择对话框 */
+        .mode-dialog {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        
+        .mode-dialog.hidden {
+            display: none;
+        }
+        
+        .mode-dialog-content {
+            background: #000;
+            border: 4px solid #f8d830;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .mode-dialog-title {
+            color: #f8d830;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .mode-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .mode-btn {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 12px;
+            padding: 15px 30px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .mode-btn.single {
+            background: #40a040;
+            color: #f0f0f0;
+        }
+        
+        .mode-btn.dual {
+            background: #4060a0;
+            color: #f0f0f0;
+        }
+        
+        .mode-btn.cancel {
+            background: #606060;
+            color: #f0f0f0;
+        }
+        
+        .mode-btn:hover {
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <!-- 页面标题 -->
+    <h1>地图编辑器</h1>
+    
+    <!-- 主容器 -->
+    <div class="editor-container">
+        <!-- 左侧工具面板 -->
+        <div class="tool-panel">
+            <div class="panel-title">工具</div>
+            
+            <!-- 地形选择 -->
+            <div class="tool-group">
+                <div class="tool-group-title">地形类型</div>
+                <div class="tile-buttons">
+                    <button class="tile-btn empty active" data-type="0">空地</button>
+                    <button class="tile-btn brick" data-type="1">砖块</button>
+                    <button class="tile-btn steel" data-type="2">钢铁</button>
+                    <button class="tile-btn water" data-type="3">水域</button>
+                    <button class="tile-btn grass" data-type="4">草地</button>
+                    <button class="tile-btn base" data-type="5">基地</button>
+                </div>
+            </div>
+            
+            <!-- 画笔大小 -->
+            <div class="tool-group">
+                <div class="tool-group-title">画笔大小</div>
+                <div class="brush-size">
+                    <button class="brush-btn active" data-size="1">1x1</button>
+                    <button class="brush-btn" data-size="2">2x2</button>
+                    <button class="brush-btn" data-size="3">3x3</button>
+                    <button class="brush-btn" data-size="4">4x4</button>
+                </div>
+            </div>
+            
+            <!-- 地图信息 -->
+            <div class="tool-group">
+                <div class="tool-group-title">地图信息</div>
+                <div class="map-info">
+                    <input type="text" id="mapName" placeholder="地图名称" value="自定义关卡">
+                    <input type="text" id="mapDesc" placeholder="地图描述" value="玩家自定义地图">
+                    <input type="number" id="enemyCount" placeholder="敌人数量" value="5" min="1" max="20">
+                </div>
+            </div>
+            
+            <!-- 操作按钮 -->
+            <div class="tool-group">
+                <div class="tool-group-title">操作</div>
+                <div class="action-buttons">
+                    <button class="action-btn save" onclick="saveMap()">保存地图</button>
+                    <button class="action-btn load" onclick="loadMap()">加载地图</button>
+                    <button class="action-btn clear" onclick="clearMap()">清空地图</button>
+                    <button class="action-btn test" onclick="testMap()">测试地图</button>
+                    <button class="action-btn back" onclick="window.location.href='index.html'">返回游戏</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 画布区域 -->
+        <div class="canvas-container">
+            <canvas id="mapCanvas" width="624" height="624"></canvas>
+        </div>
+        
+        <!-- 右侧面板 -->
+        <div class="right-panel">
+            <div class="panel-title">已保存地图</div>
+            <div class="preview-list" id="savedMapsList">
+                <!-- 动态加载已保存的地图 -->
+            </div>
+            
+            <div class="tool-group" style="margin-top: 15px;">
+                <div class="tool-group-title">帮助</div>
+                <div class="help-info">
+                    <p>左键: 绘制地形</p>
+                    <p>右键: 擦除(空地)</p>
+                    <p>拖动: 连续绘制</p>
+                    <p>基地需要两个对称放置</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 隐藏的文件输入 -->
+    <input type="file" id="fileInput" accept=".json">
+    
+    <!-- 提示消息 -->
+    <div class="toast" id="toast"></div>
+    
+    <!-- 模式选择对话框 -->
+    <div id="modeDialog" class="mode-dialog hidden">
+        <div class="mode-dialog-content">
+            <div class="mode-dialog-title">选择游戏模式</div>
+            <div class="mode-buttons">
+                <button class="mode-btn single" onclick="startTest(false)">单人模式</button>
+                <button class="mode-btn dual" onclick="startTest(true)">双人模式</button>
+                <button class="mode-btn cancel" onclick="closeModeDialog()">取消</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        /* ============================================
+           地图编辑器脚本
+           Map Editor Script
+           ============================================ */
+        
+        // 地图常量
+        const MAP_WIDTH = 26;
+        const MAP_HEIGHT = 26;
+        const TILE_SIZE = 24;
+        
+        // 地形类型
+        const TILE_TYPES = {
+            EMPTY: 0,
+            BRICK: 1,
+            STEEL: 2,
+            WATER: 3,
+            GRASS: 4,
+            BASE: 5
+        };
+        
+        // 地形颜色
+        const TILE_COLORS = {
+            [TILE_TYPES.EMPTY]: '#000000',
+            [TILE_TYPES.BRICK]: '#a04020',
+            [TILE_TYPES.STEEL]: '#808080',
+            [TILE_TYPES.WATER]: '#2040a0',
+            [TILE_TYPES.GRASS]: '#206020',
+            [TILE_TYPES.BASE]: '#a0a0a0'
+        };
+        
+        // 编辑器状态
+        let map = [];
+        let currentTile = TILE_TYPES.EMPTY;
+        let brushSize = 1;
+        let isDrawing = false;
+        
+        // 获取画布
+        const canvas = document.getElementById('mapCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        /**
+         * 初始化地图
+         */
+        function initMap() {
+            map = [];
+            for (let y = 0; y < MAP_HEIGHT; y++) {
+                map[y] = [];
+                for (let x = 0; x < MAP_WIDTH; x++) {
+                    map[y][x] = TILE_TYPES.EMPTY;
+                }
+            }
+            
+            // 设置默认基地位置（两个对称的基地方块）
+            const baseX = Math.floor(MAP_WIDTH / 2);
+            const baseY = MAP_HEIGHT - 2;
+            map[baseY][baseX - 1] = TILE_TYPES.BASE;
+            map[baseY][baseX] = TILE_TYPES.BASE;
+            
+            // 在基地周围放置砖块保护（3行4列区域周围）
+            for (let dy = -1; dy <= 1; dy++) {
+                for (let dx = -2; dx <= 1; dx++) {
+                    const tx = baseX + dx;
+                    const ty = baseY + dy;
+                    if (tx >= 0 && tx < MAP_WIDTH && ty >= 0 && ty < MAP_HEIGHT) {
+                        // 跳过基地方块本身
+                        if ((dx === -1 || dx === 0) && dy === 0) continue;
+                        map[ty][tx] = TILE_TYPES.BRICK;
+                    }
+                }
+            }
+            
+            render();
+        }
+        
+        /**
+         * 渲染地图
+         */
+        function render() {
+            // 清空画布
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // 绘制网格和地形
+            for (let y = 0; y < MAP_HEIGHT; y++) {
+                for (let x = 0; x < MAP_WIDTH; x++) {
+                    const tileType = map[y][x];
+                    const px = x * TILE_SIZE;
+                    const py = y * TILE_SIZE;
+                    
+                    // 绘制地形
+                    ctx.fillStyle = TILE_COLORS[tileType];
+                    ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+                    
+                    // 绘制网格线
+                    ctx.strokeStyle = '#303030';
+                    ctx.strokeRect(px, py, TILE_SIZE, TILE_SIZE);
+                    
+                    // 特殊地形效果
+                    if (tileType === TILE_TYPES.BRICK) {
+                        // 砖块纹理
+                        ctx.strokeStyle = '#803010';
+                        ctx.beginPath();
+                        ctx.moveTo(px, py + TILE_SIZE / 2);
+                        ctx.lineTo(px + TILE_SIZE, py + TILE_SIZE / 2);
+                        ctx.moveTo(px + TILE_SIZE / 2, py);
+                        ctx.lineTo(px + TILE_SIZE / 2, py + TILE_SIZE / 2);
+                        ctx.stroke();
+                    } else if (tileType === TILE_TYPES.STEEL) {
+                        // 钢铁纹理
+                        ctx.fillStyle = '#a0a0a0';
+                        ctx.fillRect(px + 2, py + 2, TILE_SIZE - 4, TILE_SIZE - 4);
+                    } else if (tileType === TILE_TYPES.BASE) {
+                        // 基地图标 - 红色五角星
+                        ctx.fillStyle = '#ff0000';
+                        ctx.beginPath();
+                        const cx = px + TILE_SIZE / 2;
+                        const cy = py + TILE_SIZE / 2;
+                        const outerR = TILE_SIZE / 2 - 3;
+                        const innerR = outerR * 0.4;
+                        for (let i = 0; i < 5; i++) {
+                            const outerAngle = (i * 72 - 90) * Math.PI / 180;
+                            const innerAngle = ((i * 72) + 36 - 90) * Math.PI / 180;
+                            const ox = cx + outerR * Math.cos(outerAngle);
+                            const oy = cy + outerR * Math.sin(outerAngle);
+                            const ix = cx + innerR * Math.cos(innerAngle);
+                            const iy = cy + innerR * Math.sin(innerAngle);
+                            if (i === 0) {
+                                ctx.moveTo(ox, oy);
+                            } else {
+                                ctx.lineTo(ox, oy);
+                            }
+                            ctx.lineTo(ix, iy);
+                        }
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+                }
+            }
+        }
+        
+        /**
+         * 绘制地形
+         */
+        function paint(screenX, screenY, tileType) {
+            const rect = canvas.getBoundingClientRect();
+            const x = Math.floor((screenX - rect.left) / TILE_SIZE);
+            const y = Math.floor((screenY - rect.top) / TILE_SIZE);
+            
+            // 绘制画笔大小区域
+            for (let dy = 0; dy < brushSize; dy++) {
+                for (let dx = 0; dx < brushSize; dx++) {
+                    const tx = x + dx;
+                    const ty = y + dy;
+                    
+                    if (tx >= 0 && tx < MAP_WIDTH && ty >= 0 && ty < MAP_HEIGHT) {
+                        map[ty][tx] = tileType;
+                    }
+                }
+            }
+            
+            render();
+        }
+        
+        /**
+         * 获取鼠标位置
+         */
+        function getMousePos(e) {
+            return {
+                x: e.clientX,
+                y: e.clientY
+            };
+        }
+        
+        // 画布事件监听
+        canvas.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            isDrawing = true;
+            const pos = getMousePos(e);
+            
+            if (e.button === 2) {
+                // 右键擦除
+                paint(pos.x, pos.y, TILE_TYPES.EMPTY);
+            } else {
+                // 左键绘制
+                paint(pos.x, pos.y, currentTile);
+            }
+        });
+        
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDrawing) return;
+            const pos = getMousePos(e);
+            
+            if (e.buttons === 2) {
+                paint(pos.x, pos.y, TILE_TYPES.EMPTY);
+            } else if (e.buttons === 1) {
+                paint(pos.x, pos.y, currentTile);
+            }
+        });
+        
+        canvas.addEventListener('mouseup', () => {
+            isDrawing = false;
+        });
+        
+        canvas.addEventListener('mouseleave', () => {
+            isDrawing = false;
+        });
+        
+        // 禁用右键菜单
+        canvas.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+        });
+        
+        // 地形按钮事件
+        document.querySelectorAll('.tile-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tile-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentTile = parseInt(btn.dataset.type);
+            });
+        });
+        
+        // 画笔大小按钮事件
+        document.querySelectorAll('.brush-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.brush-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                brushSize = parseInt(btn.dataset.size);
+            });
+        });
+        
+        /**
+         * 显示提示消息
+         */
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast show' + (isError ? ' error' : '');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+        
+        /**
+         * 保存地图到本地存储
+         */
+        function saveMap() {
+            const name = document.getElementById('mapName').value || '自定义关卡';
+            const desc = document.getElementById('mapDesc').value || '玩家自定义地图';
+            const enemyCount = parseInt(document.getElementById('enemyCount').value) || 5;
+            
+            // 转换为障碍物格式
+            const obstacles = convertToObstacles();
+            
+            const mapData = {
+                name: name,
+                description: desc,
+                enemyCount: enemyCount,
+                obstacles: obstacles,
+                timestamp: Date.now()
+            };
+            
+            // 保存到本地存储
+            let savedMaps = JSON.parse(localStorage.getItem('tankMaps') || '[]');
+            savedMaps.push(mapData);
+            localStorage.setItem('tankMaps', JSON.stringify(savedMaps));
+            
+            // 更新列表
+            updateSavedMapsList();
+            
+            showToast('地图已保存!');
+            
+            // 同时提供JSON下载
+            downloadMap(mapData);
+        }
+        
+        /**
+         * 转换地图为障碍物格式
+         */
+        function convertToObstacles() {
+            const obstacles = [];
+            const visited = [];
+            
+            for (let y = 0; y < MAP_HEIGHT; y++) {
+                visited[y] = [];
+                for (let x = 0; x < MAP_WIDTH; x++) {
+                    visited[y][x] = false;
+                }
+            }
+            
+            for (let y = 0; y < MAP_HEIGHT; y++) {
+                for (let x = 0; x < MAP_WIDTH; x++) {
+                    if (visited[y][x]) continue;
+                    if (map[y][x] === TILE_TYPES.EMPTY) continue;
+                    
+                    const type = map[y][x];
+                    let w = 1, h = 1;
+                    
+                    // 向右扩展
+                    while (x + w < MAP_WIDTH && map[y][x + w] === type && !visited[y][x + w]) {
+                        w++;
+                    }
+                    
+                    // 向下扩展
+                    let canExpand = true;
+                    while (canExpand && y + h < MAP_HEIGHT) {
+                        for (let dx = 0; dx < w; dx++) {
+                            if (map[y + h][x + dx] !== type || visited[y + h][x + dx]) {
+                                canExpand = false;
+                                break;
+                            }
+                        }
+                        if (canExpand) h++;
+                    }
+                    
+                    // 标记已访问
+                    for (let dy = 0; dy < h; dy++) {
+                        for (let dx = 0; dx < w; dx++) {
+                            visited[y + dy][x + dx] = true;
+                        }
+                    }
+                    
+                    obstacles.push({ x, y, type, w, h });
+                }
+            }
+            
+            return obstacles;
+        }
+        
+        /**
+         * 下载地图JSON文件
+         */
+        function downloadMap(mapData) {
+            const dataStr = JSON.stringify(mapData, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${mapData.name.replace(/\s+/g, '_')}.json`;
+            a.click();
+            
+            URL.revokeObjectURL(url);
+        }
+        
+        /**
+         * 加载地图
+         */
+        function loadMap() {
+            document.getElementById('fileInput').click();
+        }
+        
+        // 文件输入事件
+        document.getElementById('fileInput').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const mapData = JSON.parse(event.target.result);
+                    loadMapData(mapData);
+                    showToast('地图已加载!');
+                } catch (error) {
+                    showToast('加载失败: 无效的JSON文件', true);
+                }
+            };
+            reader.readAsText(file);
+            
+            // 重置文件输入
+            e.target.value = '';
+        });
+        
+        /**
+         * 加载地图数据
+         */
+        function loadMapData(mapData) {
+            // 清空地图
+            for (let y = 0; y < MAP_HEIGHT; y++) {
+                for (let x = 0; x < MAP_WIDTH; x++) {
+                    map[y][x] = TILE_TYPES.EMPTY;
+                }
+            }
+            
+            // 应用障碍物
+            if (mapData.obstacles) {
+                mapData.obstacles.forEach(obs => {
+                    for (let dy = 0; dy < obs.h; dy++) {
+                        for (let dx = 0; dx < obs.w; dx++) {
+                            const tx = obs.x + dx;
+                            const ty = obs.y + dy;
+                            if (tx >= 0 && tx < MAP_WIDTH && ty >= 0 && ty < MAP_HEIGHT) {
+                                map[ty][tx] = obs.type;
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // 更新地图信息
+            if (mapData.name) {
+                document.getElementById('mapName').value = mapData.name;
+            }
+            if (mapData.description) {
+                document.getElementById('mapDesc').value = mapData.description;
+            }
+            if (mapData.enemyCount !== undefined) {
+                document.getElementById('enemyCount').value = mapData.enemyCount;
+            }
+            
+            render();
+        }
+        
+        /**
+         * 清空地图
+         */
+        function clearMap() {
+            if (confirm('确定要清空地图吗?')) {
+                initMap();
+                showToast('地图已清空!');
+            }
+        }
+        
+        /**
+         * 测试地图
+         */
+        function testMap() {
+            // 保存当前编辑状态到临时存储
+            saveEditorState();
+            
+            // 显示模式选择对话框
+            document.getElementById('modeDialog').classList.remove('hidden');
+        }
+        
+        /**
+         * 保存编辑器状态
+         */
+        function saveEditorState() {
+            const obstacles = convertToObstacles();
+            const editorState = {
+                name: document.getElementById('mapName').value || '自定义关卡',
+                description: document.getElementById('mapDesc').value || '玩家自定义地图',
+                enemyCount: parseInt(document.getElementById('enemyCount').value) || 5,
+                obstacles: obstacles,
+                currentTile: currentTile,
+                brushSize: brushSize
+            };
+            localStorage.setItem('editorState', JSON.stringify(editorState));
+        }
+        
+        /**
+         * 恢复编辑器状态
+         */
+        function restoreEditorState() {
+            const savedState = localStorage.getItem('editorState');
+            if (savedState) {
+                try {
+                    const state = JSON.parse(savedState);
+                    
+                    // 恢复地图数据
+                    if (state.obstacles) {
+                        // 清空地图
+                        for (let y = 0; y < MAP_HEIGHT; y++) {
+                            for (let x = 0; x < MAP_WIDTH; x++) {
+                                map[y][x] = TILE_TYPES.EMPTY;
+                            }
+                        }
+                        
+                        // 应用障碍物
+                        state.obstacles.forEach(obs => {
+                            for (let dy = 0; dy < obs.h; dy++) {
+                                for (let dx = 0; dx < obs.w; dx++) {
+                                    const tx = obs.x + dx;
+                                    const ty = obs.y + dy;
+                                    if (tx >= 0 && tx < MAP_WIDTH && ty >= 0 && ty < MAP_HEIGHT) {
+                                        map[ty][tx] = obs.type;
+                                    }
+                                }
+                            }
+                        });
+                    }
+                    
+                    // 恢复地图信息
+                    if (state.name) {
+                        document.getElementById('mapName').value = state.name;
+                    }
+                    if (state.description) {
+                        document.getElementById('mapDesc').value = state.description;
+                    }
+                    if (state.enemyCount !== undefined) {
+                        document.getElementById('enemyCount').value = state.enemyCount;
+                    }
+                    
+                    // 恢复工具状态
+                    if (state.currentTile !== undefined) {
+                        currentTile = state.currentTile;
+                        document.querySelectorAll('.tile-btn').forEach(btn => {
+                            btn.classList.remove('active');
+                            if (parseInt(btn.dataset.type) === currentTile) {
+                                btn.classList.add('active');
+                            }
+                        });
+                    }
+                    if (state.brushSize !== undefined) {
+                        brushSize = state.brushSize;
+                        document.querySelectorAll('.brush-btn').forEach(btn => {
+                            btn.classList.remove('active');
+                            if (parseInt(btn.dataset.size) === brushSize) {
+                                btn.classList.add('active');
+                            }
+                        });
+                    }
+                    
+                    render();
+                    showToast('已恢复上次编辑的地图');
+                } catch (e) {
+                    console.error('恢复编辑器状态失败:', e);
+                }
+            }
+        }
+        
+        /**
+         * 关闭模式选择对话框
+         */
+        function closeModeDialog() {
+            document.getElementById('modeDialog').classList.add('hidden');
+        }
+        
+        /**
+         * 开始测试
+         */
+        function startTest(isTwoPlayer) {
+            // 保存测试地图数据
+            const obstacles = convertToObstacles();
+            const mapData = {
+                name: document.getElementById('mapName').value || '测试关卡',
+                description: document.getElementById('mapDesc').value || '测试地图',
+                enemyCount: parseInt(document.getElementById('enemyCount').value) || 5,
+                obstacles: obstacles,
+                isTwoPlayer: isTwoPlayer
+            };
+            
+            localStorage.setItem('testMap', JSON.stringify(mapData));
+            
+            // 跳转到游戏页面
+            window.location.href = 'index.html?testMap=1';
+        }
+        
+        /**
+         * 更新已保存地图列表
+         */
+        function updateSavedMapsList() {
+            const list = document.getElementById('savedMapsList');
+            const savedMaps = JSON.parse(localStorage.getItem('tankMaps') || '[]');
+            
+            list.innerHTML = '';
+            
+            savedMaps.forEach((mapData, index) => {
+                const item = document.createElement('div');
+                item.className = 'preview-item';
+                item.innerHTML = `
+                    <span class="preview-item-name">${mapData.name}</span>
+                    <span class="preview-item-delete" onclick="deleteSavedMap(${index}, event)">删除</span>
+                `;
+                item.addEventListener('click', () => {
+                    loadMapData(mapData);
+                });
+                list.appendChild(item);
+            });
+            
+            if (savedMaps.length === 0) {
+                list.innerHTML = '<div style="color: #808080; font-size: 10px; text-align: center; padding: 10px;">暂无保存的地图</div>';
+            }
+        }
+        
+        /**
+         * 删除已保存的地图
+         */
+        function deleteSavedMap(index, event) {
+            event.stopPropagation();
+            if (confirm('确定要删除这个地图吗?')) {
+                let savedMaps = JSON.parse(localStorage.getItem('tankMaps') || '[]');
+                savedMaps.splice(index, 1);
+                localStorage.setItem('tankMaps', JSON.stringify(savedMaps));
+                updateSavedMapsList();
+                showToast('地图已删除!');
+            }
+        }
+        
+        // 初始化
+        initMap();
+        updateSavedMapsList();
+        // 恢复上次编辑的地图
+        restoreEditorState();
+    </script>
+</body>
+</html>

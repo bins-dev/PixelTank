@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <!-- 字符编码设置 -->
+    <meta charset="UTF-8">
+    <!-- 移动端视口设置 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 页面标题 -->
+    <title>坦克大战</title>
+    <!-- 引入样式文件 -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- 游戏主容器 -->
+    <div class="game-wrapper">
+        <!-- ==================== 左侧面板 ==================== -->
+        <div class="side-panel left-panel">
+            <!-- 游戏标题 -->
+            <div class="panel-title">坦克大战</div>
+
+            <!-- 关卡信息 -->
+            <div class="panel-section">
+                <div class="stat-label">关卡</div>
+                <div class="stat-value" id="level">1</div>
+            </div>
+
+            <!-- 剩余敌人数量 -->
+            <div class="panel-section">
+                <div class="stat-label">剩余敌人</div>
+                <div class="enemy-count" id="enemyCount">0</div>
+            </div>
+
+            <!-- 操作说明区域 -->
+            <div class="controls-section">
+                <div class="controls-title">操作说明</div>
+                <!-- 玩家移动控制 -->
+                <div class="control-item">
+                    <span class="key">W A S D</span>
+                    <span class="action">移动</span>
+                </div>
+                <!-- 玩家射击控制 -->
+                <div class="control-item">
+                    <span class="key">空格</span>
+                    <span class="action">射击</span>
+                </div>
+                <!-- 暂停控制 -->
+                <div class="control-item">
+                    <span class="key">P</span>
+                    <span class="action">暂停</span>
+                </div>
+                <!-- 敌人属性弹窗控制 -->
+                <div class="control-item">
+                    <span class="key">V</span>
+                    <span class="action">敌人属性</span>
+                </div>
+            </div>
+
+            <!-- 操作按钮区域 -->
+            <div class="button-section">
+                <button id="pauseResumeBtn" class="fc-button hidden">暂停</button>
+                <button id="exitGameBtn" class="fc-button hidden">退出游戏</button>
+                <a id="editorBtn" href="editor.html" class="fc-button link-btn">地图编辑器</a>
+            </div>
+        </div>
+
+        <!-- ==================== 中间游戏区域 ==================== -->
+        <div class="game-container">
+            <!-- 游戏画布 -->
+            <canvas id="gameCanvas" width="832" height="832"></canvas>
+
+            <!-- 游戏遮罩层（用于显示菜单、游戏结束、关卡过渡等） -->
+            <div id="gameOverlay" class="game-overlay">
+                <div class="overlay-content">
+                    <div class="overlay-title" id="overlayTitle">坦克大战</div>
+                    <div class="overlay-score" id="overlayMessage">连接服务器中...</div>
+                    <!-- 网络联机面板 -->
+                    <div id="roomPanel" class="network-panel hidden">
+                        <div class="network-section">
+                            <button id="createRoomBtn" class="fc-button network-btn">创建房间</button>
+                        </div>
+                        <div class="network-divider"></div>
+                        <div class="network-section">
+                            <div class="input-group">
+                                <input type="text" id="roomCodeInput" class="room-code-input" maxlength="4"
+                                    placeholder="输入房间码">
+                                <button id="joinRoomBtn" class="fc-button network-btn">加入房间</button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 联机等待面板 -->
+                    <div id="waitingPanel" class="network-panel hidden">
+                        <div class="room-code-display">
+                            <span class="room-code-label">房间码:</span>
+                            <span class="room-code-value" id="displayRoomCode">----</span>
+                        </div>
+                        <!-- 玩家列表 -->
+                        <div class="player-list-section">
+                            <div class="player-list-title">已加入的玩家</div>
+                            <div class="player-list" id="playerList">
+                                <div class="player-list-item" id="playerSlot1">
+                                    <span class="player-slot-label">用户1</span>
+                                    <span class="player-slot-status">等待加入...</span>
+                                </div>
+                                <div class="player-list-item" id="playerSlot2">
+                                    <span class="player-slot-label">用户2</span>
+                                    <span class="player-slot-status">等待加入...</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="waiting-status">
+                            <div id="waitingText">等待其他玩家加入...</div>
+                        </div>
+                        <button id="startGameBtn" class="fc-button network-btn hidden">开始游戏</button>
+                        <button id="leaveRoomBtn" class="fc-button network-btn back-btn">退出房间</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 关卡完成提示 -->
+            <div id="levelCompleteOverlay" class="level-complete-hint">
+                <div class="level-complete-content">
+                    <div class="level-complete-title">关卡完成!</div>
+                    <div class="level-complete-timer" id="levelCompleteTimer">30秒后进入下一关</div>
+                    <button id="nextLevelBtn" class="fc-button level-complete-btn">下一关</button>
+                </div>
+            </div>
+
+            <!-- 敌人属性弹窗（按V键显示） -->
+            <div id="enemyInfoPopup" class="enemy-info-popup hidden">
+                <div class="popup-title">敌人属性 (按V关闭)</div>
+                <div class="popup-content">
+                    <!-- 轻型坦克属性 -->
+                    <div class="enemy-stat-item">
+                        <div class="enemy-stat-header">
+                            <span class="tank-icon light"></span>
+                            <span class="enemy-type-name">轻型坦克</span>
+                        </div>
+                        <div class="enemy-stat-details">
+                            <div class="enemy-stat-row">
+                                <span class="stat-name">生命</span>
+                                <span class="stat-num" id="enemyHpLight">40000</span>
+                            </div>
+                            <div class="enemy-stat-row">
+                                <span class="stat-name">速度</span>
+                                <span class="stat-num" id="enemySpeedLight">15000</span>
+                            </div>
+                            <div class="enemy-stat-row">
+                                <span class="stat-name">弹速</span>
+                                <span class="stat-num" id="enemyBulletLight">85000</span>
+                            </div>
+                            <div class="enemy-stat-row">
+                                <span class="stat-name">伤害</span>
+                                <span class="stat-num" id="enemyDmgLight">20000</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 中型坦克属性 -->
+                    <div class="enemy-stat-item">
+                        <div class="enemy-stat-header">
+                            <span class="tank-icon normal"></span>
+                            <span class="enemy-type-name">中型坦克</span>
+                        </div>
+                        <div class="enemy-stat-details">
+                            <div class="enemy-stat-row">
+                                <span class="stat-name">生命</span>
+                                <span class="stat-num" id="enemyHpNormal">80000</span>
+                            </div>
+                            <div class="enemy-stat-row">
+                                <span class="stat-name">速度</span>
+                                <span class="stat-num" id="enemySpeedNormal">10000</span>
+                            </div>
+                            <div class="enemy-stat-row">
+                                <span class="stat-name">弹速</span>
+                                <span class="stat-num" id="enemyBulletNormal">60000</span>
+                            </div>
+                            <div class="enemy-stat-row">
+                                <span class="stat-name">伤害</span>
+                                <span class="stat-num" id="enemyDmgNormal">40000</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 重型坦克属性 -->
+                    <div class="enemy-stat-item">
+                        <div class="enemy-stat-header">
+                            <span class="tank-icon heavy"></span>
+                            <span class="enemy-type-name">重型坦克</span>
+                        </div>
+                        <div class="enemy-stat-details">
+                            <div class="enemy-stat-row">
+                                <span class="stat-name">生命</span>
+                                <span class="stat-num" id="enemyHpHeavy">120000</span>
+                            </div>
+                            <div class="enemy-stat-row">
+                                <span class="stat-name">速度</span>
+                                <span class="stat-num" id="enemySpeedHeavy">5000</span>
+                            </div>
+                            <div class="enemy-stat-row">
+                                <span class="stat-name">弹速</span>
+                                <span class="stat-num" id="enemyBulletHeavy">45000</span>
+                            </div>
+                            <div class="enemy-stat-row">
+                                <span class="stat-name">伤害</span>
+                                <span class="stat-num" id="enemyDmgHeavy">60000</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== 右侧面板 ==================== -->
+        <div class="side-panel right-panel">
+            <!-- 玩家1信息 -->
+            <div class="panel-section player-stats" id="player1Stats">
+                <!-- 玩家标识 -->
+                <div class="player-header">
+                    <span class="player-indicator p1"></span>
+                    <span class="player-name">玩家1</span>
+                </div>
+                <!-- 分数 -->
+                <div class="stat-row">
+                    <span class="stat-label">分数</span>
+                    <span class="stat-value-small" id="score1">0</span>
+                </div>
+                <!-- 速度 -->
+                <div class="stat-row">
+                    <span class="stat-label">速度</span>
+                    <span class="stat-value-small" id="speed1">10000</span>
+                </div>
+                <!-- 生命值进度条 -->
+                <div class="stat-row hp-row">
+                    <span class="stat-label">生命值</span>
+                    <div class="hp-bar-container">
+                        <div class="hp-bar" id="hpBar1">
+                            <div class="hp-fill" id="hpFill1"></div>
+                            <div class="hp-text" id="hpText1">80000/80000</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 炮弹速度 -->
+                <div class="stat-row">
+                    <span class="stat-label">炮弹速度</span>
+                    <span class="stat-value-small" id="bulletSpeed1">60000</span>
+                </div>
+                <!-- 炮弹伤害 -->
+                <div class="stat-row">
+                    <span class="stat-label">炮弹伤害</span>
+                    <span class="stat-value-small" id="bulletDamage1">40000</span>
+                </div>
+                <!-- 炮弹数量 -->
+                <div class="stat-row">
+                    <span class="stat-label">炮弹</span>
+                    <span class="stat-value-small" id="bulletCount1">50</span>
+                    <span class="stat-label" style="margin-left: 8px;">冷却</span>
+                    <span class="cooldown-indicator ready" id="cooldown1">就绪</span>
+                </div>
+                <!-- 生命图标显示 -->
+                <div class="stat-row">
+                    <span class="stat-label">生命</span>
+                    <div class="lives-display" id="lives1Display"></div>
+                </div>
+                <!-- 击杀统计 -->
+                <div class="stat-row kills-row">
+                    <span class="stat-label">击杀</span>
+                    <div class="kills-stats" id="kills1Stats">
+                        <span class="kill-type"><span class="kill-type-icon light"></span>0</span>
+                        <span class="kill-type"><span class="kill-type-icon normal"></span>0</span>
+                        <span class="kill-type"><span class="kill-type-icon heavy"></span>0</span>
+                        <span class="kill-type">总:0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 玩家2信息（双人模式时显示） -->
+            <div class="panel-section player-stats hidden" id="player2Stats">
+                <!-- 玩家标识 -->
+                <div class="player-header">
+                    <span class="player-indicator p2"></span>
+                    <span class="player-name">玩家2</span>
+                </div>
+                <!-- 分数 -->
+                <div class="stat-row">
+                    <span class="stat-label">分数</span>
+                    <span class="stat-value-small" id="score2">0</span>
+                </div>
+                <!-- 速度 -->
+                <div class="stat-row">
+                    <span class="stat-label">速度</span>
+                    <span class="stat-value-small" id="speed2">10000</span>
+                </div>
+                <!-- 生命值进度条 -->
+                <div class="stat-row hp-row">
+                    <span class="stat-label">生命值</span>
+                    <div class="hp-bar-container">
+                        <div class="hp-bar" id="hpBar2">
+                            <div class="hp-fill" id="hpFill2"></div>
+                            <div class="hp-text" id="hpText2">80000/80000</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 炮弹速度 -->
+                <div class="stat-row">
+                    <span class="stat-label">炮弹速度</span>
+                    <span class="stat-value-small" id="bulletSpeed2">60000</span>
+                </div>
+                <!-- 炮弹伤害 -->
+                <div class="stat-row">
+                    <span class="stat-label">炮弹伤害</span>
+                    <span class="stat-value-small" id="bulletDamage2">40000</span>
+                </div>
+                <!-- 炮弹数量 -->
+                <div class="stat-row">
+                    <span class="stat-label">炮弹</span>
+                    <span class="stat-value-small" id="bulletCount2">50</span>
+                    <span class="stat-label" style="margin-left: 8px;">冷却</span>
+                    <span class="cooldown-indicator ready" id="cooldown2">就绪</span>
+                </div>
+                <!-- 生命图标显示 -->
+                <div class="stat-row">
+                    <span class="stat-label">生命</span>
+                    <div class="lives-display" id="lives2Display"></div>
+                </div>
+                <!-- 击杀统计 -->
+                <div class="stat-row kills-row">
+                    <span class="stat-label">击杀</span>
+                    <div class="kills-stats" id="kills2Stats">
+                        <span class="kill-type"><span class="kill-type-icon light"></span>0</span>
+                        <span class="kill-type"><span class="kill-type-icon normal"></span>0</span>
+                        <span class="kill-type"><span class="kill-type-icon heavy"></span>0</span>
+                        <span class="kill-type">总:0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- WebSocket 服务器配置（从 URL 参数读取或使用默认值） -->
+    <script>
+        // 从 URL 参数解析 WS_HOST 和 WS_PORT
+        const urlParams = new URLSearchParams(window.location.search);
+        window.WS_HOST = urlParams.get('ws_host') || window.location.hostname || 'localhost';
+        window.WS_PORT = parseInt(urlParams.get('ws_port')) || 8080;
+        console.log('[Config] WebSocket 服务器:', `ws://${window.WS_HOST}:${window.WS_PORT}`);
+    </script>
+
+    <!-- 引入网络模块 -->
+    <script src="network.js"></script>
+    <!-- 引入游戏脚本 -->
+    <script src="game.js"></script>
+</body>
+
+</html>

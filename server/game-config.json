@@ -1,0 +1,137 @@
+{
+    "levelCompleteDelay": 30,
+    "player": {
+        "baseSpeed": 10000,
+        "maxHealth": 80000,
+        "bulletSpeed": 60000,
+        "bulletDamage": 40000,
+        "bulletSize": 40000,
+        "bulletCount": 50,
+        "shootCooldown": 120
+    },
+    "enemies": {
+        "light": {
+            "baseSpeed": 15000,
+            "maxHealth": 40000,
+            "bulletSpeed": 85000,
+            "bulletDamage": 20000,
+            "bulletSize": 30000,
+            "shootCooldown": 60
+        },
+        "normal": {
+            "baseSpeed": 10000,
+            "maxHealth": 80000,
+            "bulletSpeed": 60000,
+            "bulletDamage": 40000,
+            "bulletSize": 40000,
+            "shootCooldown": 120
+        },
+        "heavy": {
+            "baseSpeed": 5000,
+            "maxHealth": 120000,
+            "bulletSpeed": 45000,
+            "bulletDamage": 60000,
+            "bulletSize": 50000,
+            "shootCooldown": 180
+        }
+    },
+    "levelMultiplier": 0.1,
+    "powerUps": {
+        "spawnChance": 1,
+        "lifetime": 3600,
+        "types": {
+            "speed": {
+                "name": "速度提升",
+                "multiplier": 0.1,
+                "color": "#4080ff",
+                "calcType": "percent",
+                "fixedValue": 0,
+                "symbol": "S"
+            },
+            "speedFixed": {
+                "name": "速度固定提升",
+                "multiplier": 0,
+                "color": "#80b0ff",
+                "calcType": "fixed",
+                "fixedValue": 2000,
+                "symbol": "S+"
+            },
+            "damage": {
+                "name": "伤害提升",
+                "multiplier": 0.1,
+                "color": "#ff4040",
+                "calcType": "percent",
+                "fixedValue": 0,
+                "symbol": "D"
+            },
+            "damageFixed": {
+                "name": "伤害固定提升",
+                "multiplier": 0,
+                "color": "#ff8080",
+                "calcType": "fixed",
+                "fixedValue": 5000,
+                "symbol": "D+"
+            },
+            "bulletSpeed": {
+                "name": "弹速提升",
+                "multiplier": 0.1,
+                "color": "#f0c000",
+                "calcType": "percent",
+                "fixedValue": 0,
+                "symbol": "B"
+            },
+            "bulletSpeedFixed": {
+                "name": "弹速固定提升",
+                "multiplier": 0,
+                "color": "#ffe080",
+                "calcType": "fixed",
+                "fixedValue": 8000,
+                "symbol": "B+"
+            },
+            "heal": {
+                "name": "恢复生命值",
+                "multiplier": 0.2,
+                "color": "#40ff40",
+                "calcType": "percent",
+                "fixedValue": 0,
+                "symbol": "H"
+            },
+            "healFixed": {
+                "name": "固定恢复生命值",
+                "multiplier": 0,
+                "color": "#80ff80",
+                "calcType": "fixed",
+                "fixedValue": 40000,
+                "symbol": "H+"
+            },
+            "cooldown": {
+                "name": "冷却缩减",
+                "multiplier": 0.1,
+                "color": "#ff40ff",
+                "calcType": "percent",
+                "fixedValue": 0,
+                "symbol": "C"
+            },
+            "cooldownFixed": {
+                "name": "固定冷却缩减",
+                "multiplier": 0,
+                "color": "#ff80ff",
+                "calcType": "fixed",
+                "fixedValue": 30,
+                "symbol": "C+"
+            }
+        }
+    },
+    "maps": [
+        { "id": 1, "file": "level1.json" },
+        { "id": 2, "file": "level2.json" },
+        { "id": 3, "file": "level3.json" },
+        { "id": 4, "file": "level4.json" },
+        { "id": 5, "file": "level5.json" },
+        { "id": 6, "file": "level6.json" },
+        { "id": 7, "file": "level7.json" },
+        { "id": 8, "file": "level8.json" },
+        { "id": 9, "file": "level9.json" },
+        { "id": 10, "file": "level10.json" }
+    ]
+}
