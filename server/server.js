@@ -110,6 +110,9 @@ function handleMessage(ws, message) {
         case 'game_pause':
             handleGamePause(ws, message);
             break;
+        case 'game_event':
+            handleGameEvent(ws, message);
+            break;
         case 'heartbeat':
             break;
         default:
@@ -432,6 +435,24 @@ function handleGamePause(ws, message) {
             broadcastToRoom(room, {
                 type: 'game_resumed'
             });
+        }
+    }
+}
+
+/**
+ * 处理游戏事件（如：立即进入下一关）
+ */
+function handleGameEvent(ws, message) {
+    const room = getRoom(ws);
+    if (!room || !room.gameEngine) return;
+
+    const event = message.event || {};
+
+    if (event.type === 'next_level') {
+        // 仅在关卡完成过渡期间允许跳过等待
+        if (room.gameEngine.levelComplete && room.gameState === 'playing') {
+            console.log(`房间 ${room.code} 玩家 ${ws.playerId} 请求立即进入下一关`);
+            room.gameEngine.toNextLevel();
         }
     }
 }

@@ -935,7 +935,8 @@ class GameEngine {
      * 游戏主更新循环（每帧调用）
      */
     update() {
-        if (this.gameState !== 'running') {
+        // level_transition 状态下仍需继续更新（倒计时进入下一关）
+        if (this.gameState !== 'running' && this.gameState !== 'level_transition') {
             return;
         }
 

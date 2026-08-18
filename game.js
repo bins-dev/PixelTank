@@ -822,8 +822,11 @@ class Renderer {
      */
     startClientRenderLoop() {
         const renderLoop = () => {
-            // 游戏不在运行时，停止渲染
-            if (this.gameState !== 'running') {
+            // 游戏不在运行/关卡过渡时，停止渲染
+            // 注意：level_transition（通关倒计时）期间必须继续渲染，
+            // 否则进入下一关后画面会永久冻结
+            if (this.gameState !== 'running' && this.gameState !== 'level_transition') {
+                this.animationId = null;
                 return;
             }
 
@@ -833,9 +836,7 @@ class Renderer {
                 this.draw();
             }
 
-            if (this.gameState === 'running') {
-                this.animationId = requestAnimationFrame(renderLoop);
-            }
+            this.animationId = requestAnimationFrame(renderLoop);
         };
 
         if (!this.animationId) {
@@ -988,11 +989,18 @@ class Renderer {
         }
 
         // 进入下一关
+        const levelCompleteOverlay = document.getElementById('levelCompleteOverlay');
         if (state.gameState === 'level_transition') {
-            const levelCompleteOverlay = document.getElementById('levelCompleteOverlay');
             if (levelCompleteOverlay) {
                 levelCompleteOverlay.classList.add('active');
             }
+            // 实时倒计时
+            const timerEl = document.getElementById('levelCompleteTimer');
+            if (timerEl && typeof state.levelCompleteTimer === 'number') {
+                timerEl.textContent = `${Math.max(0, Math.ceil(state.levelCompleteTimer / 60))}秒后进入下一关`;
+            }
+        } else if (levelCompleteOverlay) {
+            levelCompleteOverlay.classList.remove('active');
         }
 
 
@@ -1025,8 +1033,8 @@ class Renderer {
     setupEventListeners() {
         // 键盘按下事件
         document.addEventListener('keydown', (e) => {
-            // 发送按键到服务器
-            if (this.gameState === 'running' && this.network && this.network.connected) {
+            // 发送按键到服务器（通关倒计时期间也可以移动，方便拾取道具）
+            if ((this.gameState === 'running' || this.gameState === 'level_transition') && this.network && this.network.connected) {
                 this.network.sendKeyDown(e.code);
             }
 
@@ -1049,7 +1057,7 @@ class Renderer {
 
         // 键盘抬起按键
         document.addEventListener('keyup', (e) => {
-            if (this.gameState === 'running' && this.network && this.network.connected) {
+            if ((this.gameState === 'running' || this.gameState === 'level_transition') && this.network && this.network.connected) {
                 this.network.sendKeyUp(e.code);
             }
         });
@@ -1348,8 +1356,8 @@ class Renderer {
      * 跳过关卡过度等待时间，进入下一关
      */
     toNextLevel() {
-        // 通知服务器用户已点击下一关按钮
-        if (this.network && this.network.isHost()) {
+        // 通知服务器用户已点击下一关按钮（房间内任意玩家均可触发）
+        if (this.network && this.network.connected) {
             this.network.nextLevel();
         }
         // 隐藏关卡完成面板

@@ -364,7 +364,7 @@ class NetworkManager {
      * 下一关
      */
     nextLevel() {
-        if (!this.connected || this.role !== 'host') return;
+        if (!this.connected) return;
         this.send({
             type: 'game_event',
             event: { type: 'next_level' }
